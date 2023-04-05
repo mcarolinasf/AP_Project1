@@ -2,4 +2,5 @@
 # -*- coding: utf-8 -*-
 """
 Aprendizagem Profunda, TP1
+teste
 """
