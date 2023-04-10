@@ -9,8 +9,11 @@ teste
 from tp1_utils import load_data
 import tensorflow as tf
 import numpy as np
-from tensorflow.keras import regularizers
+from keras import regularizers
 import matplotlib.pyplot as plt
+
+
+# ** ----------------------------- MLP ----------------------------- **
 
 # Load data for main types only
 
@@ -75,3 +78,5 @@ plt.ylabel("Loss")
 plt.xlabel("Epoch")
 plt.legend(["train", "val"], loc="upper left")
 plt.show()
+
+# ** ----------------------------- MLP ----------------------------- **
