@@ -92,8 +92,44 @@ print("Validation accuracy:", test_acc)
 
 
 
-# ** ----------------------------- LOLOLOLOLOL ----------------------------- **
+# ** ----------------------------- NN ----------------------------- **
 
+# Hyperparameters
+nn_loss = 'binary_crossentropy'
+nn_learning_rate = 0.003
+nn_optimizer = tf.keras.optimizers.Adam(learning_rate=cnn_learning_rate)
+nn_metrics = ['accuracy', tf.keras.metrics.Recall(), tf.keras.metrics.Precision()]
+nn_epochs = 50
+nn_batch_size = 32
+
+# Create model
+nn_model = Sequential(
+    [
+      Conv2D(filters=32, kernel_size=(3, 3), activation='relu', input_shape=(64, 64, 3)),
+      MaxPooling2D(pool_size=(2, 2)),
+      Conv2D(filters=64, kernel_size=(3, 3), activation='relu'),
+      MaxPooling2D(pool_size=(2, 2)),
+      Conv2D(filters=128, kernel_size=(3, 3), activation='relu'),
+      MaxPooling2D(pool_size=(2, 2)),
+      Flatten(),
+      Dense(units=128, activation='relu'),
+      Dense(units=10, activation='sigmoid')
+    ]
+)
+
+nn_model.compile(optimizer=nn_optimizer, loss=nn_loss, metrics=nn_metrics)
+
+history = nn_model.fit(x_train, y_train, batch_size = nn_batch_size, epochs=nn_epochs, validation_data=(x_val, y_val))
+
+test_scores = nn_model.evaluate(x_val, y_val, verbose=2)
+print("Validation loss:", test_scores[0])
+print("Validation accuracy:", test_scores[1])
+print("Validation recall:", test_scores[2])
+print("Validation precision:", test_scores[3])
+
+
+
+# ** ----------------------------- Visual ----------------------------- **
 
 # Plot the training and validation accuracy over time
 plt.plot(history.history["accuracy"])
