@@ -58,38 +58,53 @@ print("Validation accuracy:", test_scores[1])
 
 # ** ----------------------------- CNN ----------------------------- **
 
-# Hyperparameters
-cnn_loss = 'categorical_crossentropy'
-cnn_learning_rate = 0.0001
-cnn_optimizer = tf.keras.optimizers.Adam(learning_rate=cnn_learning_rate)
-cnn_metrics = ['accuracy']
-cnn_epochs = 50
+class PlotRelevantInfo():
+    def __init__(self, results):
+        self.iterations = 10
+        self.results = results
+        self.titles = ['Training Accuracy', 'Validation Accuracy', 'Training Loss', 'Validation Loss']
 
-# Create model
-cnn_model = Sequential(
-    [
-      Conv2D(filters=32, kernel_size=(5, 5), activation='relu', input_shape=(64, 64, 3)),
-      MaxPooling2D(pool_size=(2, 2)),
-      Conv2D(filters=64, kernel_size=(5, 5), activation='relu'),
-      MaxPooling2D(pool_size=(2, 2)),
-      Conv2D(filters=64, kernel_size=(5, 5), activation='relu'),
-      Flatten(),
-      Dense(units=64, activation='relu'),
-      Dense(units=10, activation='softmax')
-    ]
-)
+    def plot_results_and_print_means(self):
+        for result, title in zip(self.results, self.titles):
+            plt.plot(list(zip(*result)))
+            plt.title(f'{title} over {self.iterations} iterations')
+            plt.ylabel(title)
+            plt.xlabel('Epoch')
+            plt.show()
+        for result, title in zip(self.results, self.titles):
+            lasts = [r[-1] for r in result]
+        print(f"Average {title}: {sum(lasts)/len(lasts)}")
 
-# Compile
-cnn_model.compile(optimizer=cnn_optimizer, loss=cnn_loss, metrics=cnn_metrics)
 
-# Fit
-history = cnn_model.fit(x=x_train, y=y_train, epochs=cnn_epochs, validation_data=(x_val, y_val))
+tr_acc, val_acc, tr_loss, val_loss = [], [], [], []
+for n in range(10):
+    cnn_loss = 'categorical_crossentropy'
+    cnn_metrics = ['accuracy']
+    cnn_learning_rate = 0.001
+    cnn_epochs = 50
+    cnn_optimizer = tf.keras.optimizers.Adam(learning_rate=cnn_learning_rate)
+    cnn_model = Sequential(
+        [
+            Conv2D(filters=32, kernel_size=(3, 3), activation='relu', input_shape=(64, 64, 3), kernel_regularizer=regularizers.l2(0.0001)),
+            MaxPooling2D(pool_size=(3, 3)),
+            Conv2D(filters=64, kernel_size=(3, 3), activation='relu', kernel_regularizer=regularizers.l2(0.0005)),
+            MaxPooling2D(pool_size=(3, 3)),
+            Conv2D(filters=64, kernel_size=(3, 3), activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+            MaxPooling2D(pool_size=(3, 3)),
+            Flatten(),    
+            Dense(units=10, activation='softmax')
+        ]
+    )
+    cnn_model.compile(optimizer=cnn_optimizer, loss=cnn_loss, metrics=cnn_metrics)
+    history = cnn_model.fit(x=x_train, y=y_train, epochs=cnn_epochs, validation_data=(x_val, y_val), batch_size=32, verbose=0)
+    tr_acc.append(history.history['accuracy'])
+    val_acc.append(history.history['val_accuracy'])
+    tr_loss.append(history.history['loss'])
+    val_loss.append(history.history['val_loss'])
+    print(f"{n+1}: {tr_acc[n][-1]}, {val_acc[n][-1]}, {tr_loss[n][-1]}, {val_loss[n][-1]}")
 
-# Evaluate
-test_loss, test_acc = cnn_model.evaluate(x=x_val, y=y_val)
-print("Validation loss:", test_loss)
-print("Validation accuracy:", test_acc)
-
+plot_relevant_data = PlotRelevantInfo((tr_acc, val_acc, tr_loss, val_loss))
+plot_relevant_data.plot_results_and_print_means()
 
 
 # ** ----------------------------- NN ----------------------------- **
