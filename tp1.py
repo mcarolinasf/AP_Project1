@@ -13,6 +13,9 @@ import keras
 from keras import regularizers
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+from keras.callbacks import EarlyStopping
+from keras.preprocessing.image import ImageDataGenerator
+from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_score
 
 
 # Load data for main types only
@@ -59,52 +62,77 @@ print("Validation accuracy:", test_scores[1])
 # ** ----------------------------- CNN ----------------------------- **
 
 class PlotRelevantInfo():
-    def __init__(self, results):
-        self.iterations = 10
-        self.results = results
-        self.titles = ['Training Accuracy', 'Validation Accuracy', 'Training Loss', 'Validation Loss']
+  def __init__(self, results):
+    self.iterations = 10
+    self.acc_and_loss = results[:2]
+    self.precision_and_recall = results[2:]
+    self.titles = ['Validation Accuracy', 'Validation Loss', 'Precision', 'Recall']
 
-    def plot_results_and_print_means(self):
-        for result, title in zip(self.results, self.titles):
-            plt.plot(list(zip(*result)))
-            plt.title(f'{title} over {self.iterations} iterations')
-            plt.ylabel(title)
-            plt.xlabel('Epoch')
-            plt.show()
-        for result, title in zip(self.results, self.titles):
-            lasts = [r[-1] for r in result]
-        print(f"Average {title}: {sum(lasts)/len(lasts)}")
+  def plot_results_and_print_means(self, model):
+    self.__plot_evolution_of_validation_acc_and_loss()
+    self.__plot_avg_precision_and_recall_for_each_class()
+    self.__print_avg_validation_accuracy_and_loss()
+
+  def __plot_evolution_of_validation_acc_and_loss(self):
+    for result, title in zip(self.acc_and_loss, self.titles[:2]):
+      plt.plot(list(zip(*result)))
+      plt.xlabel('Epoch')
+      plt.ylabel(title)
+      plt.title(f'{title} over {self.iterations} iterations')
+      plt.show()
+
+  def __plot_avg_precision_and_recall_for_each_class(self):
+    for avg, title in zip(self.precision_and_recall, self.titles[2:]):
+      avg = np.mean(avg, axis=0)
+      plt.bar(np.arange(10), avg)
+      plt.xticks(np.arange(10))
+      plt.xlabel('Class')
+      plt.ylabel(f'Avg {title}')
+      plt.title(f'{title} over {self.iterations} iterations')
+      plt.show() 
+    
+  def __print_avg_validation_accuracy_and_loss(self):
+    for result, title in zip(self.acc_and_loss, self.titles[:2]):
+      lasts = [r[-1] for r in result]
+      print(f"Average {title}: {sum(lasts)/len(lasts)}")
+      
 
 
-tr_acc, val_acc, tr_loss, val_loss = [], [], [], []
+val_acc, val_loss, precisions_per_epoch, recalls_per_epoch = [], [], [], []
 for n in range(10):
-    cnn_loss = 'categorical_crossentropy'
-    cnn_metrics = ['accuracy']
-    cnn_learning_rate = 0.001
-    cnn_epochs = 50
-    cnn_optimizer = tf.keras.optimizers.Adam(learning_rate=cnn_learning_rate)
-    cnn_model = Sequential(
-        [
-            Conv2D(filters=32, kernel_size=(3, 3), activation='relu', input_shape=(64, 64, 3), kernel_regularizer=regularizers.l2(0.0001)),
-            MaxPooling2D(pool_size=(3, 3)),
-            Conv2D(filters=64, kernel_size=(3, 3), activation='relu', kernel_regularizer=regularizers.l2(0.0005)),
-            MaxPooling2D(pool_size=(3, 3)),
-            Conv2D(filters=64, kernel_size=(3, 3), activation='relu', kernel_regularizer=regularizers.l2(0.001)),
-            MaxPooling2D(pool_size=(3, 3)),
-            Flatten(),    
-            Dense(units=10, activation='softmax')
-        ]
-    )
-    cnn_model.compile(optimizer=cnn_optimizer, loss=cnn_loss, metrics=cnn_metrics)
-    history = cnn_model.fit(x=x_train, y=y_train, epochs=cnn_epochs, validation_data=(x_val, y_val), batch_size=32, verbose=0)
-    tr_acc.append(history.history['accuracy'])
-    val_acc.append(history.history['val_accuracy'])
-    tr_loss.append(history.history['loss'])
-    val_loss.append(history.history['val_loss'])
-    print(f"{n+1}: {tr_acc[n][-1]}, {val_acc[n][-1]}, {tr_loss[n][-1]}, {val_loss[n][-1]}")
+  cnn_loss = 'categorical_crossentropy'
+  cnn_learning_rate = 0.001
+  cnn_optimizer = tf.keras.optimizers.Adam(learning_rate=cnn_learning_rate)
+  cnn_metrics = ['accuracy']
+  cnn_epochs = 50
+  cnn_model = Sequential(
+    [
+      Conv2D(filters=32, kernel_size=(3, 3), activation='relu', input_shape=(64, 64, 3), kernel_regularizer=regularizers.l2(0.0001)),
+      MaxPooling2D(pool_size=(3, 3)),
+      Conv2D(filters=64, kernel_size=(3, 3), activation='relu', kernel_regularizer=regularizers.l2(0.0005)),
+      MaxPooling2D(pool_size=(3, 3)),
+      Conv2D(filters=64, kernel_size=(3, 3), activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+      MaxPooling2D(pool_size=(3, 3)),
+      Flatten(),    
+      Dense(units=10, activation='softmax')
+    ]
+  )
+  cnn_model.compile(optimizer=cnn_optimizer, loss=cnn_loss, metrics=cnn_metrics)
+  history = cnn_model.fit(x=x_train, y=y_train, epochs=cnn_epochs, validation_data=(x_val, y_val), batch_size=32, verbose=0)
+  # save validation accuracy and loss
+  val_acc.append(history.history['val_accuracy'])
+  val_loss.append(history.history['val_loss'])
+  print(f"{n+1}: {val_acc[n][-1]}, {val_loss[n][-1]}")
+  # compute and save precision and recall
+  y_pred = cnn_model.predict(x_val, verbose=0)
+  y_pred_labels = np.zeros_like(y_pred)
+  for a, b in zip(y_pred, y_pred_labels):
+    b[np.argmax(a)] = 1
+  precisions_per_epoch.append(precision_score(y_val, y_pred_labels, average=None))
+  recalls_per_epoch.append(recall_score(y_val, y_pred_labels, average=None))
 
-plot_relevant_data = PlotRelevantInfo((tr_acc, val_acc, tr_loss, val_loss))
-plot_relevant_data.plot_results_and_print_means()
+plot_relevant_data = PlotRelevantInfo((val_acc, val_loss, precisions_per_epoch, recalls_per_epoch))
+plot_relevant_data.plot_results_and_print_means(cnn_model)
 
 
 # ** ----------------------------- NN ----------------------------- **
