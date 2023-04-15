@@ -97,14 +97,14 @@ class PlotRelevantInfo():
       print(f"Average {title}: {sum(lasts)/len(lasts)}")
       
 
-
-val_acc, val_loss, precisions_per_epoch, recalls_per_epoch = [], [], [], []
+cnn_val_acc, cnn_val_loss, cnn_precisions_per_epoch, cnn_recalls_per_epoch = [], [], [], []
 for n in range(10):
   cnn_loss = 'categorical_crossentropy'
   cnn_learning_rate = 0.001
   cnn_optimizer = tf.keras.optimizers.Adam(learning_rate=cnn_learning_rate)
   cnn_metrics = ['accuracy']
   cnn_epochs = 50
+
   cnn_model = Sequential(
     [
       Conv2D(filters=32, kernel_size=(3, 3), activation='relu', input_shape=(64, 64, 3), kernel_regularizer=regularizers.l2(0.0001)),
@@ -117,36 +117,44 @@ for n in range(10):
       Dense(units=10, activation='softmax')
     ]
   )
+
   cnn_model.compile(optimizer=cnn_optimizer, loss=cnn_loss, metrics=cnn_metrics)
   history = cnn_model.fit(x=x_train, y=y_train, epochs=cnn_epochs, validation_data=(x_val, y_val), batch_size=32, verbose=0)
-  # save validation accuracy and loss
-  val_acc.append(history.history['val_accuracy'])
-  val_loss.append(history.history['val_loss'])
-  print(f"{n+1}: {val_acc[n][-1]}, {val_loss[n][-1]}")
-  # compute and save precision and recall
+
+  cnn_val_acc.append(history.history['val_accuracy'])
+  cnn_val_loss.append(history.history['val_loss'])
+
+  print(f"{n+1}: {cnn_val_acc[n][-1]}, {cnn_val_loss[n][-1]}")
+
   y_pred = cnn_model.predict(x_val, verbose=0)
   y_pred_labels = np.zeros_like(y_pred)
   for a, b in zip(y_pred, y_pred_labels):
     b[np.argmax(a)] = 1
-  precisions_per_epoch.append(precision_score(y_val, y_pred_labels, average=None))
-  recalls_per_epoch.append(recall_score(y_val, y_pred_labels, average=None))
 
-plot_relevant_data = PlotRelevantInfo((val_acc, val_loss, precisions_per_epoch, recalls_per_epoch))
+  cnn_precisions_per_epoch.append(precision_score(y_val, y_pred_labels, average=None))
+  cnn_recalls_per_epoch.append(recall_score(y_val, y_pred_labels, average=None))
+
+plot_relevant_data = PlotRelevantInfo((cnn_val_acc, cnn_val_loss, cnn_precisions_per_epoch, cnn_recalls_per_epoch))
 plot_relevant_data.plot_results_and_print_means(cnn_model)
 
 
 # ** ----------------------------- NN ----------------------------- **
 
-# Hyperparameters
-nn_loss = 'binary_crossentropy'
-nn_learning_rate = 0.003
-nn_optimizer = tf.keras.optimizers.Adam(learning_rate=cnn_learning_rate)
-nn_metrics = ['accuracy', tf.keras.metrics.Recall(), tf.keras.metrics.Precision()]
-nn_epochs = 50
-nn_batch_size = 32
+nn_val_acc, nn_val_loss, nn_precisions_per_epoch, nn_recalls_per_epoch = [], [], [], []
 
-# Create model
-nn_model = Sequential(
+nn_batch_size = 64
+dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
+dataset = dataset.shuffle(buffer_size=len(x_train))
+dataset = dataset.batch(nn_batch_size)
+
+for n in range(1):
+  nn_loss = 'binary_crossentropy'
+  nn_learning_rate = 0.001
+  nn_optimizer = tf.keras.optimizers.Adam(learning_rate=nn_learning_rate)
+  nn_metrics = ['accuracy', tf.keras.metrics.Recall(), tf.keras.metrics.Precision()]
+  nn_epochs = 50
+
+  nn_model = Sequential(
     [
       Conv2D(filters=32, kernel_size=(3, 3), activation='relu', input_shape=(64, 64, 3)),
       MaxPooling2D(pool_size=(2, 2)),
@@ -158,18 +166,28 @@ nn_model = Sequential(
       Dense(units=128, activation='relu'),
       Dense(units=10, activation='sigmoid')
     ]
-)
+  )
 
-nn_model.compile(optimizer=nn_optimizer, loss=nn_loss, metrics=nn_metrics)
+  nn_model.compile(optimizer=nn_optimizer, loss=nn_loss, metrics=nn_metrics)
+  #history = nn_model.fit(x=x_train, y=y_train, epochs=nn_epochs, validation_data=(x_val, y_val), verbose=0)
+  history = nn_model.fit(dataset, epochs=nn_epochs, validation_data=(x_val, y_val), verbose=0)
 
-history = nn_model.fit(x_train, y_train, batch_size = nn_batch_size, epochs=nn_epochs, validation_data=(x_val, y_val))
+  nn_val_acc.append(history.history['val_accuracy'])
+  nn_val_loss.append(history.history['val_loss'])
 
-test_scores = nn_model.evaluate(x_val, y_val, verbose=2)
-print("Validation loss:", test_scores[0])
-print("Validation accuracy:", test_scores[1])
-print("Validation recall:", test_scores[2])
-print("Validation precision:", test_scores[3])
+  print(f"{n+1}: {nn_val_acc[n][-1]}, {nn_val_loss[n][-1]}")
 
+  y_pred = nn_model.predict(x_val, verbose=0)
+  y_pred_labels = np.zeros_like(y_pred)
+  for a, b in zip(y_pred, y_pred_labels):
+    for i in np.argsort(a)[-2:]:
+      b[i] = 1
+
+  nn_precisions_per_epoch.append(precision_score(y_val, y_pred_labels, average=None))
+  nn_recalls_per_epoch.append(recall_score(y_val, y_pred_labels, average=None))
+
+plot_relevant_data = PlotRelevantInfo((nn_val_acc, nn_val_loss, nn_precisions_per_epoch, nn_recalls_per_epoch))
+plot_relevant_data.plot_results_and_print_means(nn_model)
 
 
 # ** ----------------------------- Visual ----------------------------- **
