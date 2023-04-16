@@ -40,7 +40,7 @@ def MLP():
     mlp_loss = 'categorical_crossentropy'
     mlp_learning_rate = 0.0001
     mlp_optimizer = tf.keras.optimizers.Adam(learning_rate=mlp_learning_rate)
-    mlp_metrics = ['accuracy']
+    mlp_metrics = ['accuracy', tf.keras.metrics.Precision(), tf.keras.metrics.Recall()]
     mlp_epochs = 75
 
     mlp_model = Sequential(
@@ -57,6 +57,13 @@ def MLP():
     mlp_model.compile(optimizer=mlp_optimizer, loss=mlp_loss, metrics=mlp_metrics)
 
     history = mlp_model.fit(dataset, epochs=mlp_epochs, validation_data=(x_val, y_val))
+    test_scores = model.evaluate(x_val, y_val, verbose=2)
+    print("Validation loss:", test_scores[0])
+    print("Validation accuracy:", test_scores[1])
+    print("Validation precision:", test_scores[2])
+    print("Validation recall:", test_scores[3])
+    
+    PlotData(history)
    
                                                                          
 
