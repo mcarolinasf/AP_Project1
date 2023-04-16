@@ -21,12 +21,10 @@ from keras.applications import VGG16, ResNet50
 from utils import PlotRelevantInfo, PlotData, EvaluateDataLog
 
 
-# Load data for main types only
+# Load data
 data = load_data()
 
-# ** ----------------------------- MLP ----------------------------- **
-
-
+# ** ----------------------------- Models ----------------------------- **
 def MLP():
 
     x_train = data["train_X"]
@@ -65,13 +63,7 @@ def MLP():
     print("Validation recall:", test_scores[3])
     
     PlotData(history)
-   
-                                                                         
-
-
-# ** ----------------------------- CNN ----------------------------- **
-
-
+                                                                          
 def CNN():
 
     # Assign data
@@ -130,10 +122,6 @@ def CNN():
         )
         plot_relevant_data.plot_results_and_print_means(cnn_model)
 
-
-# ** ----------------------------- NN ----------------------------- **
-
-
 def NN():
 
     # Assign data
@@ -191,11 +179,13 @@ def NN():
         plot_relevant_data = PlotRelevantInfo((nn_val_acc, nn_val_loss, nn_precisions_per_epoch, nn_recalls_per_epoch))
         plot_relevant_data.plot_results_and_print_means(nn_model)
 
-
-# ** ----------------------------- DNN_Multiclass ----------------------------- **
-
-
 def DNN_Multiclass():
+
+    dnn_mc_loss = "categorical_crossentropy"
+    dnn_mc_learning_rate = 0.0001
+    dnn_mc_optimizer = tf.keras.optimizers.Adam(learning_rate=dnn_mc_learning_rate)
+    dnn_mc_metrics = ['accuracy']
+    dnn_mc_epochs = 20
 
     # Assign data
     x_train = data["train_X"]
@@ -203,35 +193,37 @@ def DNN_Multiclass():
     x_val = data["test_X"]
     y_val = data["test_classes"]
 
-    nn_optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
+    
 
     # Load the pre-trained VGG16 model
     vgg_model = VGG16(weights="imagenet", include_top=False, input_shape=(64, 64, 3))
 
     # Model
-    model = Sequential()
-    model.add(vgg_model)
-    model.add(Flatten())
-    model.add(Dense(128, activation="relu"))
-    model.add(Dense(10, activation="softmax"))
+    dnn_mc_model = Sequential()
+    dnn_mc_model.add(vgg_model)
+    dnn_mc_model.add(Flatten())
+    dnn_mc_model.add(Dense(128, activation="relu"))
+    dnn_mc_model.add(Dense(10, activation="softmax"))
 
     # Compile
-    model.compile(optimizer=nn_optimizer, loss="categorical_crossentropy", metrics=["accuracy"])
+    dnn_mc_model.compile(optimizer=dnn_mc_optimizer, loss=dnn_mc_loss, metrics=dnn_mc_metrics)
 
     # Train the model
-    history = model.fit(x_train, y_train, batch_size=256, epochs=20, validation_data=(x_val, y_val))
+    history = dnn_mc_model.fit(x_train, y_train, batch_size=256, epochs=dnn_mc_epochs, validation_data=(x_val, y_val))
 
-    test_scores = model.evaluate(x_val, y_val, verbose=2)
+    test_scores = dnn_mc_model.evaluate(x_val, y_val, verbose=2)
     print("Validation loss:", test_scores[0])
     print("Validation accuracy:", test_scores[1])
 
     PlotData(history)
 
-
-# ** ----------------------------- DNN_Multilabel ----------------------------- **
-
-
 def DNN_Multilabel():
+
+    dnn_ml_loss = "binary_crossentropy"
+    dnn_ml_learning_rate = 0.0001
+    dnn_ml_optimizer = tf.keras.optimizers.Adam(learning_rate=dnn_ml_learning_rate)
+    dnn_ml_metrics = ["accuracy", tf.keras.metrics.Precision(), tf.keras.metrics.Recall()]
+    dnn_ml_epochs = 30
 
     # Assign data
     x_train = data["train_X"]
@@ -239,32 +231,42 @@ def DNN_Multilabel():
     x_val = data["test_X"]
     y_val = data["test_labels"]
 
-    nn_optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
-
     # Load the pre-trained VGG16 model
     vgg_model = VGG16(weights="imagenet", include_top=False, input_shape=(64, 64, 3))
 
     # Model
-    model = Sequential()
-    model.add(vgg_model)
-    model.add(Flatten())
-    model.add(Dense(128, activation="relu", kernel_regularizer=regularizers.l2(0.0003)))
-    model.add(Dense(10, activation="sigmoid"))
+    dnn_ml_model = Sequential()
+    dnn_ml_model.add(vgg_model)
+    dnn_ml_model.add(Flatten())
+    dnn_ml_model.add(Dense(128, activation="relu", kernel_regularizer=regularizers.l2(0.0003)))
+    dnn_ml_model.add(Dense(10, activation="sigmoid"))
 
     # Compile
-    model.compile(
-        optimizer=nn_optimizer,
-        loss="binary_crossentropy",
-        metrics=["accuracy", tf.keras.metrics.Precision(), tf.keras.metrics.Recall()],
+    dnn_ml_model.compile(
+        optimizer=dnn_ml_optimizer,
+        loss=dnn_ml_loss,
+        metrics=dnn_ml_metrics,
     )
 
     # Train the model
-    history = model.fit(x_train, y_train, batch_size=256, epochs=30, validation_data=(x_val, y_val))
+    history = dnn_ml_model.fit(x_train, y_train, batch_size=256, epochs=dnn_ml_epochs, validation_data=(x_val, y_val))
 
-    test_scores = model.evaluate(x_val, y_val, verbose=2)
+    test_scores = dnn_ml_model.evaluate(x_val, y_val, verbose=2)
     print("Validation loss:", test_scores[0])
     print("Validation accuracy:", test_scores[1])
     print("Validation precision:", test_scores[2])
     print("Validation recall:", test_scores[3])
 
     PlotData(history)
+
+
+# ** ----------------------------- Main ----------------------------- **
+
+#Run all the models
+MLP()
+CNN()
+NN()
+DNN_Multiclass()
+DNN_Multilabel()
+
+
