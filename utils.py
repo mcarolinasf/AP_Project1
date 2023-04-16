@@ -34,4 +34,34 @@ class PlotRelevantInfo():
     for result, title in zip(self.acc_and_loss, self.titles[:2]):
       lasts = [r[-1] for r in result]
       print(f"Avg {title}: {sum(lasts)/len(lasts)}")
-      
+
+# Plot the training and validation accuracy over time
+class PlotData():
+
+    def __init__(self, history):
+        self.history = history
+        self.__plot_accuracy__()
+        self.__plot_loss__()
+
+    def __plot_loss__(self):
+       # Plot the training and validation loss over time
+        plt.plot(self.history.history['loss'])
+        plt.plot(self.history.history['val_loss'])
+        plt.title('Model Loss')
+        plt.ylabel('Loss')
+        plt.xlabel('Epoch')
+        plt.legend(['train', 'val'], loc='upper left')
+        plt.show()
+    
+    # Plot the training and validation accuracy over time
+    def __plot_accuracy__(self):
+        plt.plot(self.history.history['accuracy'])
+        plt.plot(self.history.history['val_accuracy'])
+        plt.title('Model Accuracy')
+        plt.ylabel('Accuracy')
+        plt.xlabel('Epoch')
+        plt.legend(['train', 'val'], loc='upper left')
+        plt.show()
+
+
+    
