@@ -113,10 +113,8 @@ def CNN():
         cnn_precisions_per_epoch.append(precision_score(y_val, y_pred_labels, average=None))
         cnn_recalls_per_epoch.append(recall_score(y_val, y_pred_labels, average=None))
 
-        plot_relevant_data = PlotRelevantInfo(
-            (cnn_val_acc, cnn_val_loss, cnn_precisions_per_epoch, cnn_recalls_per_epoch)
-        )
-        plot_relevant_data.plot_results_and_print_means(cnn_model)
+    plot_relevant_data = PlotRelevantInfo((cnn_val_acc, cnn_val_loss, cnn_precisions_per_epoch, cnn_recalls_per_epoch))
+    plot_relevant_data.plot_results_and_print_means(cnn_model)
 
 def NN():
 
@@ -172,8 +170,8 @@ def NN():
         nn_precisions_per_epoch.append(precision_score(y_val, y_pred_labels, average=None))
         nn_recalls_per_epoch.append(recall_score(y_val, y_pred_labels, average=None))
 
-        plot_relevant_data = PlotRelevantInfo((nn_val_acc, nn_val_loss, nn_precisions_per_epoch, nn_recalls_per_epoch))
-        plot_relevant_data.plot_results_and_print_means(nn_model)
+    plot_relevant_data = PlotRelevantInfo((nn_val_acc, nn_val_loss, nn_precisions_per_epoch, nn_recalls_per_epoch))
+    plot_relevant_data.plot_results_and_print_means(nn_model)
 
 def DNN_Multiclass():
 
