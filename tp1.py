@@ -56,7 +56,7 @@ def MLP():
 
     mlp_model.compile(optimizer=mlp_optimizer, loss=mlp_loss, metrics=mlp_metrics)
 
-    history = mlp_model.fit(dataset, epochs=mlp_epochs, validation_data=(x_val, y_val))
+    history = mlp_model.fit(dataset, epochs=mlp_epochs, validation_data=(x_val, y_val))
    
                                                                          
 
