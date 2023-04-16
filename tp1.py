@@ -8,17 +8,13 @@ teste
 from tp1_utils import load_data
 import tensorflow as tf
 import numpy as np
-import matplotlib.pyplot as plt
-import keras
 from keras import regularizers
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
-from keras.callbacks import EarlyStopping
-from keras.preprocessing.image import ImageDataGenerator
 from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_score
 from keras.applications import VGG16, ResNet50
 
-from utils import PlotRelevantInfo, PlotData, EvaluateDataLog
+from utils import PlotRelevantInfo, PlotData
 
 
 # Load data
@@ -209,7 +205,7 @@ def DNN_Multiclass():
     dnn_mc_model.compile(optimizer=dnn_mc_optimizer, loss=dnn_mc_loss, metrics=dnn_mc_metrics)
 
     # Train the model
-    history = dnn_mc_model.fit(x_train, y_train, batch_size=256, epochs=dnn_mc_epochs, validation_data=(x_val, y_val))
+    history = dnn_mc_model.fit(x_train, y_train, epochs=dnn_mc_epochs, validation_data=(x_val, y_val))
 
     test_scores = dnn_mc_model.evaluate(x_val, y_val, verbose=2)
     print("Validation loss:", test_scores[0])
@@ -249,7 +245,7 @@ def DNN_Multilabel():
     )
 
     # Train the model
-    history = dnn_ml_model.fit(x_train, y_train, batch_size=256, epochs=dnn_ml_epochs, validation_data=(x_val, y_val))
+    history = dnn_ml_model.fit(x_train, y_train, epochs=dnn_ml_epochs, validation_data=(x_val, y_val))
 
     test_scores = dnn_ml_model.evaluate(x_val, y_val, verbose=2)
     print("Validation loss:", test_scores[0])
@@ -263,10 +259,10 @@ def DNN_Multilabel():
 # ** ----------------------------- Main ----------------------------- **
 
 #Run all the models
-MLP()
+#MLP()
 CNN()
-NN()
-DNN_Multiclass()
-DNN_Multilabel()
+#NN()
+#DNN_Multiclass()
+#DNN_Multilabel()
 
 
