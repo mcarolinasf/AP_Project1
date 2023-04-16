@@ -259,10 +259,10 @@ def DNN_Multilabel():
 # ** ----------------------------- Main ----------------------------- **
 
 #Run all the models
-#MLP()
+MLP()
 CNN()
-#NN()
-#DNN_Multiclass()
-#DNN_Multilabel()
+NN()
+DNN_Multiclass()
+DNN_Multilabel()
 
 
